@@ -47,7 +47,7 @@ El tamaño y SHA256 del archivo final se registran en `docs/APK.json`. Se usaron
 ## Pendiente de acceso o configuración del propietario
 
 - El propietario indicó que desplegará después en Vercel. No se crearon proyectos, bases cloud ni dominios. Vercel CLI 65.2.0 respondió `Logged out`; no se publicó un despliegue temporal ni se contrataron recursos.
-- El remoto está configurado como `https://github.com/RoyerMerchan/api-metadata-sport.git`. El código está confirmado localmente. `git push -u origin main` no pudo autenticarse porque no hay credenciales GitHub disponibles. El workflow remoto no se ha ejecutado; `docs/DEPLOYMENT.md` incluye los comandos de autenticación y publicación.
+- El código está publicado en `main` de `https://github.com/RoyerMerchan/api-metadata-sport.git`. La cuenta autenticada se comprobó mediante GitHub API antes de subir. GitHub identifica autor, committer y actor de la publicación como **RoyerMerchan**. Se verificó que el HEAD remoto coincide con el local. El workflow se activó; su resultado remoto puede consultarse en la pestaña Actions y no se confunde con las pruebas locales documentadas arriba.
 - Quedan para el propietario: importar ambos proyectos, conectar PostgreSQL, configurar variables por entorno y comprobar el healthcheck HTTPS público. Los pasos están en `docs/DEPLOYMENT.md`.
 - El APK release firmado requiere la URL pública y las credenciales de firma proporcionadas fuera del repositorio. No se generó una firma release de producción.
 - No había dispositivos ni emuladores conectados en `adb devices`. No se probó instalación, ejecución del Keystore ni navegación Atrás en Android nativo; se verificaron compilación nativa y comportamiento web con viewport Android.

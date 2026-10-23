@@ -43,7 +43,15 @@ Configura **Production** y **Preview** por separado. Los previews necesitan otra
 
 ## Orden de publicación
 
-El código está confirmado en Git local, pero la subida al remoto no pudo autenticarse. Antes de importar el repositorio en Vercel, ejecuta desde la raíz del monorepo:
+El código está publicado en `main` y los commits están atribuidos a **RoyerMerchan**. Ya puedes importar el repositorio en Vercel. En una copia nueva, configura la identidad de este proyecto antes de crear commits:
+
+```bash
+git config --local user.name RoyerMerchan
+git config --local user.email 108962467+RoyerMerchan@users.noreply.github.com
+git config --local credential.https://github.com.username RoyerMerchan
+```
+
+Para publicar cambios posteriores desde una terminal que necesite autenticación, usa la cuenta **RoyerMerchan**:
 
 ```bash
 gh auth login
@@ -51,7 +59,7 @@ gh auth setup-git
 git push -u origin main
 ```
 
-Estos comandos usan la sesión GitHub de tu cuenta y publican la rama en `RoyerMerchan/api-metadata-sport`. El APK y los secretos locales quedan excluidos del repositorio.
+Estos comandos autentican GitHub y publican la rama en `RoyerMerchan/api-metadata-sport`. Comprueba que la sesión pertenece a RoyerMerchan. El APK y los secretos locales quedan excluidos del repositorio.
 
 1. Inicia sesión con `npx vercel login`. En el dashboard autoriza el repositorio GitHub indicado.
 2. Importa `footlab-api` con la raíz y framework de la tabla. Añade su base y variables antes del primer despliegue.
