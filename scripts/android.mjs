@@ -1,0 +1,28 @@
+import { spawn } from 'node:child_process';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+import { parse } from 'dotenv';
+const release = process.argv[2] === 'release';
+const mobile = resolve('apps/mobile');
+const fromFile = path => existsSync(path) ? parse(readFileSync(path)) : {};
+const local = fromFile(join(mobile, '.env')); const production = fromFile(join(mobile, '.env.production'));
+let apiUrl = process.env.VITE_API_URL ?? (release ? production.VITE_API_URL : local.VITE_API_URL) ?? 'http://10.0.2.2:3000/api/v1';
+if (!release) apiUrl = apiUrl.replace('://localhost:', '://10.0.2.2:');
+const url = new URL(apiUrl);
+if (!url.pathname.endsWith('/api/v1')) throw new Error('VITE_API_URL debe terminar en /api/v1');
+if (release && (url.protocol !== 'https:' || /TU_API|localhost|10\.0\.2\.2/i.test(apiUrl))) throw new Error('Release requiere la URL HTTPS real de Vercel en apps/mobile/.env.production o VITE_API_URL');
+if (release) for (const key of ['FOOTLAB_STORE_FILE', 'FOOTLAB_STORE_PASSWORD', 'FOOTLAB_KEY_ALIAS', 'FOOTLAB_KEY_PASSWORD']) if (!process.env[key]) throw new Error(`Falta ${key} para firmar el release`);
+let javaHome = process.env.JAVA_HOME;
+const cacheJdk = resolve('.cache/jdk21');
+if (existsSync(cacheJdk)) { const folder = readdirSync(cacheJdk).find(n => n.startsWith('jdk-')); if (folder) javaHome = join(cacheJdk, folder); }
+const env = { ...process.env, VITE_API_URL: apiUrl, FOOTLAB_DEBUG_HTTP: !release && url.protocol === 'http:' ? '1' : '0', GRADLE_USER_HOME: resolve('.cache/gradle'), ANDROID_USER_HOME: resolve('.cache/android'), ...(javaHome ? { JAVA_HOME: javaHome, PATH: join(javaHome, 'bin') + (process.platform === 'win32' ? ';' : ':') + process.env.PATH } : {}) };
+const run = (command, args, cwd = process.cwd()) => new Promise((resolve, reject) => { const child = spawn(command, args, { cwd, env, stdio: 'inherit', shell: process.platform === 'win32' && command.endsWith('.cmd') }); child.once('error', reject); child.once('exit', code => code === 0 ? resolve() : reject(new Error(`Falló ${command}; código ${code}`))); });
+await run(process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm', ['mobile:build']);
+await run(process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm', ['--filter', '@footlab/mobile', 'android:sync']);
+const java = javaHome ? join(javaHome, 'bin', process.platform === 'win32' ? 'java.exe' : 'java') : 'java';
+const gradleArgs = ['-classpath', join(mobile, 'android/gradle/wrapper/gradle-wrapper.jar'), 'org.gradle.wrapper.GradleWrapperMain', release ? 'assembleRelease' : 'assembleDebug', '--no-daemon'];
+if (process.env.FOOTLAB_GRADLE_INIT) gradleArgs.push('-I', resolve(process.env.FOOTLAB_GRADLE_INIT));
+await run(java, gradleArgs, join(mobile, 'android'));
+const apk = join(mobile, `android/app/build/outputs/apk/${release ? 'release/app-release.apk' : 'debug/app-debug.apk'}`);
+if (!existsSync(apk)) throw new Error(`Gradle no produjo el APK esperado: ${apk}`);
+console.log(`APK verificado: ${apk}\nAPI: ${apiUrl}`);

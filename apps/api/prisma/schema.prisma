@@ -1,0 +1,353 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+datasource db {
+  provider = "postgresql"
+}
+enum ClubRole {
+  OWNER
+  DIRECTOR
+  COACH
+  ANALYST
+  SCOUT
+  PLAYER
+  VIEWER
+}
+enum GlobalRole {
+  USER
+  ADMIN
+}
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+}
+enum EventType {
+  GOAL
+  OWN_GOAL
+  YELLOW_CARD
+  RED_CARD
+  SUBSTITUTION
+}
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  email String @unique
+  name String
+  passwordHash String
+  globalRole GlobalRole @default(USER)
+  createdAt DateTime @default(now())
+  memberships OrganizationMember[]
+  sessions Session[]
+  passwordResets PasswordReset[]
+  favorites Favorite[]
+  audits AuditLog[]
+  reports ScoutingReport[]
+  invitations OrganizationInvitation[]
+}
+model Session {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshHash String
+  previousHash String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  userAgent String?
+  activeOrganizationId String? @db.Uuid
+  activeOrganization Organization? @relation(fields: [activeOrganizationId], references: [id], onDelete: SetNull)
+  @@index([userId, revokedAt])
+  @@index([userId, activeOrganizationId])
+}
+model PasswordReset {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String @unique
+  expiresAt DateTime
+  usedAt DateTime?
+}
+model Organization {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  isDemo Boolean @default(false)
+  createdAt DateTime @default(now())
+  members OrganizationMember[]
+  competitions Competition[]
+  teams Team[]
+  players Player[]
+  matches Match[]
+  scoutingLists ScoutingList[]
+  reports ScoutingReport[]
+  audits AuditLog[]
+  sessions Session[]
+  invitations OrganizationInvitation[]
+}
+model OrganizationInvitation {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String @db.Uuid
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  issuerId String @db.Uuid
+  issuer User @relation(fields: [issuerId], references: [id])
+  email String
+  role ClubRole
+  tokenHash String @unique
+  expiresAt DateTime
+  acceptedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([organizationId, email, createdAt])
+}
+model Role {
+  id String @id @default(uuid()) @db.Uuid
+  key ClubRole @unique
+  permissions Permission[] @relation("RolePermissions")
+  members OrganizationMember[]
+}
+model Permission {
+  id String @id @default(uuid()) @db.Uuid
+  key String @unique
+  roles Role[] @relation("RolePermissions")
+}
+model OrganizationMember {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String @db.Uuid
+  userId String @db.Uuid
+  roleId String @db.Uuid
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id])
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+model DataSource {
+  id String @id @default(uuid()) @db.Uuid
+  key String @unique
+  name String
+  attribution String
+  identifiers ExternalIdentifier[]
+}
+model ExternalIdentifier {
+  id String @id @default(uuid()) @db.Uuid
+  dataSourceId String @db.Uuid
+  dataSource DataSource @relation(fields: [dataSourceId], references: [id])
+  entityType String
+  externalId String
+  internalId String @db.Uuid
+  updatedAt DateTime @updatedAt
+  @@unique([dataSourceId, entityType, externalId])
+  @@index([entityType, internalId])
+}
+model Competition {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String? @db.Uuid
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  name String
+  country String?
+  source String @default("CLUB")
+  isDemo Boolean @default(false)
+  seasons Season[]
+  @@index([organizationId, name])
+}
+model Season {
+  id String @id @default(uuid()) @db.Uuid
+  competitionId String @db.Uuid
+  competition Competition @relation(fields: [competitionId], references: [id])
+  name String
+  startDate DateTime @db.Date
+  endDate DateTime @db.Date
+  datesAreCoverage Boolean @default(false)
+  squads SquadMembership[]
+  matches Match[]
+  reports ScoutingReport[]
+  @@unique([competitionId, name])
+}
+model Team {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String? @db.Uuid
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  name String
+  category String @default("Absoluta")
+  source String @default("CLUB")
+  isDemo Boolean @default(false)
+  archivedAt DateTime?
+  squads SquadMembership[]
+  staff StaffMember[]
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+  lineups MatchLineup[]
+  appearances MatchAppearance[]
+  events MatchEvent[]
+  favorites Favorite[]
+  @@index([organizationId, name])
+}
+model Player {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String? @db.Uuid
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  name String
+  position String
+  birthDate DateTime? @db.Date
+  nationality String?
+  source String @default("CLUB")
+  isDemo Boolean @default(false)
+  archivedAt DateTime?
+  squads SquadMembership[]
+  appearances MatchAppearance[]
+  events MatchEvent[] @relation("EventPlayer")
+  relatedEvents MatchEvent[] @relation("RelatedPlayer")
+  metrics MetricValue[]
+  reports ScoutingReport[]
+  favorites Favorite[]
+  @@index([organizationId, position, name])
+}
+model SquadMembership {
+  id String @id @default(uuid()) @db.Uuid
+  playerId String @db.Uuid
+  teamId String @db.Uuid
+  seasonId String @db.Uuid
+  player Player @relation(fields: [playerId], references: [id])
+  team Team @relation(fields: [teamId], references: [id])
+  season Season @relation(fields: [seasonId], references: [id])
+  shirtNumber Int?
+  joinedAt DateTime @db.Date
+  leftAt DateTime? @db.Date
+  @@unique([playerId, teamId, seasonId])
+  @@index([seasonId, teamId])
+}
+model StaffMember {
+  id String @id @default(uuid()) @db.Uuid
+  teamId String @db.Uuid
+  team Team @relation(fields: [teamId], references: [id])
+  name String
+  job String
+  @@index([teamId])
+}
+model Match {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String? @db.Uuid
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  seasonId String @db.Uuid
+  season Season @relation(fields: [seasonId], references: [id])
+  homeTeamId String @db.Uuid
+  awayTeamId String @db.Uuid
+  homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  kickoff DateTime
+  kickoffTimezoneKnown Boolean @default(true)
+  status MatchStatus @default(SCHEDULED)
+  homeScore Int?
+  awayScore Int?
+  source String @default("CLUB")
+  isDemo Boolean @default(false)
+  lineups MatchLineup[]
+  appearances MatchAppearance[]
+  events MatchEvent[]
+  metrics MetricValue[]
+  @@index([organizationId, seasonId, kickoff])
+}
+model MatchLineup {
+  id String @id @default(uuid()) @db.Uuid
+  matchId String @db.Uuid
+  teamId String @db.Uuid
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id])
+  formation String
+  @@unique([matchId, teamId])
+}
+model MatchAppearance {
+  id String @id @default(uuid()) @db.Uuid
+  matchId String @db.Uuid
+  playerId String @db.Uuid
+  teamId String @db.Uuid
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+  team Team @relation(fields: [teamId], references: [id])
+  starter Boolean
+  minutes Int
+  shirtNumber Int?
+  @@unique([matchId, playerId])
+  @@index([playerId, matchId])
+}
+model MatchEvent {
+  id String @id @default(uuid()) @db.Uuid
+  matchId String @db.Uuid
+  teamId String @db.Uuid
+  playerId String @db.Uuid
+  relatedPlayerId String? @db.Uuid
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id])
+  player Player @relation("EventPlayer", fields: [playerId], references: [id])
+  relatedPlayer Player? @relation("RelatedPlayer", fields: [relatedPlayerId], references: [id])
+  type EventType
+  minute Int
+  @@index([matchId, minute])
+  @@index([playerId, type])
+}
+model MetricDefinition {
+  id String @id @default(uuid()) @db.Uuid
+  key String @unique
+  name String
+  unit String
+  values MetricValue[]
+}
+model MetricValue {
+  id String @id @default(uuid()) @db.Uuid
+  metricId String @db.Uuid
+  metric MetricDefinition @relation(fields: [metricId], references: [id])
+  playerId String @db.Uuid
+  player Player @relation(fields: [playerId], references: [id])
+  matchId String @db.Uuid
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  value Float
+  source String
+  @@unique([metricId, playerId, matchId])
+}
+model ScoutingList {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String @db.Uuid
+  organization Organization @relation(fields: [organizationId], references: [id])
+  name String
+  reports ScoutingReport[]
+}
+model ScoutingReport {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String @db.Uuid
+  organization Organization @relation(fields: [organizationId], references: [id])
+  playerId String @db.Uuid
+  player Player @relation(fields: [playerId], references: [id])
+  seasonId String @db.Uuid
+  season Season @relation(fields: [seasonId], references: [id])
+  authorId String @db.Uuid
+  author User @relation(fields: [authorId], references: [id])
+  listId String? @db.Uuid
+  list ScoutingList? @relation(fields: [listId], references: [id])
+  rating Float
+  notes String
+  createdAt DateTime @default(now())
+  @@index([organizationId, playerId, seasonId])
+}
+model Favorite {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playerId String? @db.Uuid
+  player Player? @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  teamId String? @db.Uuid
+  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  @@unique([userId, playerId])
+  @@unique([userId, teamId])
+}
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String? @db.Uuid
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  actorId String @db.Uuid
+  actor User @relation(fields: [actorId], references: [id])
+  action String
+  entityId String
+  createdAt DateTime @default(now())
+  @@index([organizationId, createdAt])
+}

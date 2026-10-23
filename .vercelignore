@@ -1,0 +1,14 @@
+.git/
+.cache/
+.local/
+**/node_modules/
+**/.env
+**/.env.*
+**/android/
+**/dist/
+**/test-results/
+**/playwright-report/
+**/coverage/
+docs/screenshots/
+*.keystore
+*.jks

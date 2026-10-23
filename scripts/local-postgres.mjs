@@ -1,0 +1,21 @@
+import EmbeddedPostgres from 'embedded-postgres';
+import { config } from 'dotenv';
+import { existsSync, mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+config({ path: '.env', quiet: true });
+const url = new URL(process.env.DATABASE_URL ?? 'postgresql://footlab:local_only_change_me@localhost:5432/footlab');
+if (!['localhost', '127.0.0.1'].includes(url.hostname)) throw new Error('db:local solo admite una conexión local');
+const databaseDir = resolve('.local/postgres'); mkdirSync(databaseDir, { recursive: true });
+const pg = new EmbeddedPostgres({ databaseDir, user: decodeURIComponent(url.username), password: decodeURIComponent(url.password), port: Number(url.port || 5432), authMethod: 'scram-sha-256', persistent: true, postgresFlags: ['-h', '127.0.0.1'], onLog: () => {}, onError: v => { if (String(v).includes('FATAL')) console.error(String(v)); } });
+if (!existsSync(resolve(databaseDir, 'PG_VERSION'))) await pg.initialise();
+await pg.start();
+const client = pg.getPgClient('postgres'); await client.connect();
+const database = decodeURIComponent(url.pathname.slice(1));
+if (!/^[a-zA-Z0-9_]+$/.test(database)) throw new Error('Nombre de base local inválido');
+if (!(await client.query('SELECT 1 FROM pg_database WHERE datname=$1', [database])).rowCount) await pg.createDatabase(database);
+await client.end();
+console.log(`PostgreSQL local activo en 127.0.0.1:${url.port || 5432}. Ctrl+C para detener; datos en .local/postgres.`);
+let stopping = false;
+async function stop() { if (stopping) return; stopping = true; await pg.stop(); process.exit(0); }
+process.on('SIGINT', stop); process.on('SIGTERM', stop);
+await new Promise(() => {});

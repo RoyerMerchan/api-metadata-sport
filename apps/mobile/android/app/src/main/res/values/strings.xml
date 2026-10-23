@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FOOTLAB</string>
+    <string name="title_activity_main">FOOTLAB</string>
+    <string name="package_name">com.footlab.app</string>
+    <string name="custom_url_scheme">com.footlab.app</string>
+</resources>

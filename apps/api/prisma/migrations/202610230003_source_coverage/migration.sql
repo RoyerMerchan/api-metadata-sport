@@ -1,0 +1,2 @@
+ALTER TABLE "Season" ADD COLUMN "datesAreCoverage" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Match" ADD COLUMN "kickoffTimezoneKnown" BOOLEAN NOT NULL DEFAULT true;

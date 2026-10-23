@@ -1,0 +1,10 @@
+{
+  "file": "apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk",
+  "applicationId": "com.footlab.app",
+  "build": "debug",
+  "apiUrl": "http://10.0.2.2:3000/api/v1",
+  "bytes": 5050547,
+  "sha256": "dd4bd9041671d428ff81538aa4cfbe776053c5828d9fa22b5455fd1102b24fdc",
+  "signatureVerified": true,
+  "nativeDeviceTested": false
+}

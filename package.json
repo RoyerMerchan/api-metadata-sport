@@ -1,0 +1,62 @@
+{
+  "name": "footlab",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.12.4",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "setup:local": "node scripts/setup-local.mjs",
+    "dev": "concurrently -k -n API,MOBILE \"pnpm dev:api\" \"pnpm dev:mobile\"",
+    "dev:api": "pnpm db:generate && pnpm --filter @footlab/shared build && pnpm --filter @footlab/api dev",
+    "dev:mobile": "pnpm --filter @footlab/mobile dev",
+    "db:up": "docker compose up -d postgres mailpit",
+    "db:local": "node scripts/local-postgres.mjs",
+    "db:generate": "pnpm --filter @footlab/api db:generate",
+    "db:migrate:dev": "pnpm --filter @footlab/api db:migrate:dev",
+    "db:migrate:deploy": "pnpm --filter @footlab/api db:migrate:deploy",
+    "db:seed": "pnpm --filter @footlab/api db:seed",
+    "db:studio": "pnpm --filter @footlab/api db:studio",
+    "db:status": "pnpm --filter @footlab/api db:status",
+    "lint": "eslint .",
+    "typecheck": "pnpm db:generate && pnpm --filter @footlab/shared build && pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:integration": "node scripts/integration.mjs",
+    "build": "pnpm db:generate && pnpm --filter @footlab/shared build && pnpm --filter @footlab/api build && pnpm mobile:build",
+    "mobile:build": "pnpm --filter @footlab/shared build && pnpm --filter @footlab/mobile build",
+    "mobile:android:sync": "pnpm mobile:build && pnpm --filter @footlab/mobile android:sync",
+    "mobile:android:open": "pnpm --filter @footlab/mobile android:open",
+    "mobile:android:apk:debug": "node scripts/android.mjs debug",
+    "mobile:android:apk:release": "node scripts/android.mjs release",
+    "test:e2e": "node scripts/e2e.mjs",
+    "vercel:build:api": "node scripts/vercel-build.mjs api",
+    "vercel:build:web": "node scripts/vercel-build.mjs web"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "22.18.0",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.2.3",
+    "embedded-postgres": "18.4.0-beta.17",
+    "eslint": "^9.39.0",
+    "eslint-plugin-vue": "^10.5.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vue-eslint-parser": "^10.2.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/engines",
+      "prisma",
+      "argon2",
+      "esbuild",
+      "embedded-postgres",
+      "@embedded-postgres/windows-x64",
+      "@embedded-postgres/linux-x64",
+      "@embedded-postgres/darwin-arm64",
+      "@swc/core"
+    ]
+  }
+}

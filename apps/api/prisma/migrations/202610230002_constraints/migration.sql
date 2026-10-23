@@ -1,0 +1,10 @@
+ALTER TABLE "Match" ADD CONSTRAINT "Match_distinct_teams" CHECK ("homeTeamId" <> "awayTeamId");
+ALTER TABLE "Match" ADD CONSTRAINT "Match_nonnegative_score" CHECK (("homeScore" IS NULL OR "homeScore" BETWEEN 0 AND 99) AND ("awayScore" IS NULL OR "awayScore" BETWEEN 0 AND 99));
+ALTER TABLE "Match" ADD CONSTRAINT "Match_finished_score" CHECK (status <> 'FINISHED' OR ("homeScore" IS NOT NULL AND "awayScore" IS NOT NULL));
+ALTER TABLE "Season" ADD CONSTRAINT "Season_date_order" CHECK ("endDate" >= "startDate");
+ALTER TABLE "SquadMembership" ADD CONSTRAINT "Squad_date_order" CHECK ("leftAt" IS NULL OR "leftAt" >= "joinedAt");
+ALTER TABLE "MatchAppearance" ADD CONSTRAINT "Appearance_minutes" CHECK (minutes BETWEEN 0 AND 120);
+ALTER TABLE "MatchEvent" ADD CONSTRAINT "Event_minute" CHECK (minute BETWEEN 0 AND 130);
+ALTER TABLE "MatchEvent" ADD CONSTRAINT "Event_substitution" CHECK (type <> 'SUBSTITUTION' OR ("relatedPlayerId" IS NOT NULL AND "relatedPlayerId" <> "playerId"));
+ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_single_target" CHECK (("playerId" IS NULL) <> ("teamId" IS NULL));
+ALTER TABLE "ScoutingReport" ADD CONSTRAINT "Report_rating" CHECK (rating BETWEEN 0 AND 10);
