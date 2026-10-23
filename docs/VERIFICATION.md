@@ -20,6 +20,7 @@ Fecha: 23 de octubre de 2026. Entorno: Windows, zona America/Caracas. Este regis
 | API compilada con `NODE_ENV=production` | Health HTTP 200; Swagger HTTP 404 |
 | Healthcheck con fallo de consulta inyectado | HTTP 503 sin información sensible |
 | Configuración Vercel | Ambos `vercel.json` validados contra el esquema oficial; roots de API y web documentados |
+| Corrección del primer build Vercel | Retirado el patrón `functions.src/main.ts` que produjo `[unused_function]`; el preset NestJS detecta el entrypoint y la duración se configura en el proyecto |
 | Builds para Vercel | Comandos locales de API con migraciones y web ejecutados; publicación remota a cargo del propietario |
 | Dependencia cloud | SDK anterior retirado; `@vercel/functions` y gestión de conexiones PostgreSQL añadidos |
 | APK debug | Compilado mediante el script completo: Vue → Capacitor → Gradle → comprobación del archivo |

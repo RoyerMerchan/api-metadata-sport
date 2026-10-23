@@ -11,6 +11,8 @@ Se usan dos proyectos Vercel del mismo monorepo y una base PostgreSQL persistent
 
 En ambos proyectos, activa **Include source files outside of the Root Directory** para acceder a `packages/shared`, los scripts de la raíz y el lockfile. Usa Node.js **22.x**, pnpm **10.12.4** y la rama de producción `main`. Los comandos de instalación y compilación ya están en cada `vercel.json`; no configures un directorio de salida estático para la API.
 
+El preset NestJS detecta `src/main.ts` desde `apps/api` y genera la función. No añadas un bloque `functions` apuntando a ese archivo: puede provocar `[unused_function]`. Si necesitas ajustar la duración, usa **Settings → Functions → Function Max Duration** en el proyecto API.
+
 ## PostgreSQL y variables
 
 La opción preparada es **Neon Postgres desde el Marketplace de Vercel**. La base es un recurso separado: las funciones no guardan datos en su disco local. Una base PostgreSQL existente accesible por TLS también sirve. Antes de crear proyectos o contratar una base, revisa y autoriza sus recursos y condiciones en tu cuenta.
@@ -75,7 +77,7 @@ Tras conectar GitHub, Vercel desplegará los proyectos afectados por cambios. El
 
 El preset oficial NestJS detecta `apps/api/src/main.ts`. El runtime reutiliza la aplicación y su pool entre solicitudes de una instancia. Prisma usa `@prisma/adapter-pg`, un pool limitado y `attachDatabasePool` de `@vercel/functions` para gestionar conexiones inactivas. Sesiones, membresías, refresh e invitaciones viven en PostgreSQL y funcionan entre instancias.
 
-La API acepta JSON de hasta **4 MB**, dentro del límite de payload de Vercel Functions. La interfaz comprueba el tamaño de las importaciones. Cada función está configurada con `maxDuration: 300`; las importaciones se realizan por paquetes y conservan sus timeouts. Las importaciones grandes requieren un proceso de trabajo separado en una siguiente versión. El limitador NestJS actual cuenta solicitudes por instancia; las reglas globales de tráfico se configuran en Vercel Firewall.
+La API acepta JSON de hasta **4 MB**, dentro del límite de payload de Vercel Functions. La interfaz comprueba el tamaño de las importaciones. La duración de la función se gestiona desde los ajustes del proyecto Vercel; para las importaciones configura 300 segundos con Fluid compute. Las importaciones se realizan por paquetes y conservan sus timeouts. Las importaciones grandes requieren un proceso de trabajo separado en una siguiente versión. El limitador NestJS actual cuenta solicitudes por instancia; las reglas globales de tráfico se configuran en Vercel Firewall.
 
 Verificación local del mismo comando de compilación, con una base local configurada:
 

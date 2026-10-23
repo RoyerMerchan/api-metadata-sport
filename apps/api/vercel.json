@@ -3,8 +3,5 @@
   "framework": "nestjs",
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm run build:vercel",
-  "env": { "NODE_ENV": "production" },
-  "functions": {
-    "src/main.ts": { "maxDuration": 300 }
-  }
+  "env": { "NODE_ENV": "production" }
 }
